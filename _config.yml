@@ -1,0 +1,87 @@
+# Where things are
+source:       .
+destination:  ./_site
+plugins_dir:  ./_plugins
+plugins: [jekyll-paginate]
+layouts_dir:  ./_layouts
+paginate:     5
+paginate_path: /page:num
+
+# Handling Reading
+safe:         false
+include:      [".htaccess"]
+exclude:      []
+keep_files:   [".git", ".svn"]
+encoding:     "utf-8"
+markdown_ext: "markdown,mkdown,mkdn,mkd,md"
+textile_ext:  "textile"
+
+# Filtering Content
+show_drafts:  null
+limit_posts:  0
+future:       true
+unpublished:  false
+
+# Conversion
+markdown:     kramdown
+highlighter:  pygments
+lsi:          false
+excerpt_separator: "\n\n"
+
+# Serving
+detach:       false
+port:         4000
+host:         127.0.0.1
+baseurl:      "" # does not include hostname
+
+# Outputting
+permalink:     date
+timezone:      null
+
+
+#站点基础配置
+title: WW
+subTitle: ww's blog
+description: ww blog。
+url: http://www.picksoap.com
+feed: /atom.xml
+
+#菜单配置
+nav:
+  - text: 首页
+    url: /index.html
+  - text: 文章整理
+    url: /archives.html
+  - text: 项目
+    url: /works.html
+  - text: 博客源代码
+    url: https://github.com/SoapGentleMan/SoapGentleMan.github.io
+
+#theme config
+themes: /themes/violet
+
+#配置你喜欢的顶部背景图片
+headimg:
+  - item: /themes/violet/images/hdbg01.jpg
+  - item: /themes/violet/images/hdbg02.jpg
+  - item: /themes/violet/images/hdbg03.jpg
+  - item: /themes/violet/images/hdbg04.jpg
+
+#关注我
+follow:
+  - class: fa-github
+    url: https://github.com/SoapGentleMan
+
+#作者信息
+author:
+  link: http://www.picksoap.com/contact.html
+  img: http://tp2.sinaimg.cn/1832671293/180/40020872447/1
+
+#评论信息
+disqus:
+  config: false
+  id: wwblog
+
+duoshuo:
+  config: false
+  id: wwblog
