@@ -4,6 +4,7 @@ title: angular知识点（2）
 description: ngInject、ngSwitch、$timeout
 ---
 <h2>1、为了代码规范，对于需要自动加载的依赖，需要在前面加上注释，注释为：//@ngInject 或者是/*@ngInject*/</h2>
+
 <h2>2、ngSwitch的应用</h2>
 <p>在需要用到选择出现功能的地方，可以用到这个。</p>
 <p>
@@ -22,6 +23,7 @@ description: ngInject、ngSwitch、$timeout
 <p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='o'&gt;&lt;/div&gt;</p>
 <p>&lt;div&gt;</p>
 <p>如果a的值为m，则会使第一个展现，其他隐藏。</p>
+
 <h2>3、$tiemout([fn],[delay],[invokeApply],[Pass])</h2>
 <p>
     对原生js的函数setTimeout(function(),time)的封装，第一个是执行函数，第二个是延时，第三个参数是否调用$apply来包装function，默认是

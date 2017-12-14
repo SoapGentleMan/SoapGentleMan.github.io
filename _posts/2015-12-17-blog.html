@@ -1,0 +1,890 @@
+---
+layout: post
+title: angular知识点（1）
+description: angualrjs整体学习
+---
+<div class="wiki-content">
+    <h1><strong style="line-height: 1.25;">一、Scopes</strong></h1>
+
+    <h2>1、$scope 与 $rootscope</h2>
+    <p>$scope作用在当前作用域，$rootscope作用在全局作用于。</p>
+
+    <h2>
+        2、event（事件）的$on（接收）、$emit（发散）、$broadcast（广播）
+    </h2>
+    <p>用$emit来发散一个事件，例如$emit(event.name)，这个发散只有自身作用域和父作用域可以接收到这个事件，平级作用域和子作用域没办法接收到；</p>
+    <p>用$broadcast来广播一个事件，例如$broadcast(event.name)，这个发散只有自身作用域和子作用域可以接收到这个事件，平级作用域和父作用域没办法接收到；</p>
+    <p>用$on来接收上两者发散和广播的事件，例如$on(event.name,function())，接收事件并进行相应的动作。</p>
+    <p>$emit和$broadcast都属于一次作用函数，也就是引用一次，作用一次；而$on属于持续作用函数，一次引用，会持续监听。</p>
+    <h2>3、$apply、$digest、$watch</h2>
+    <p>简单点来说，调用$apply()会自动调用$digest()进行$digest循环，循环会调用$watch来监视view里各个绑定的值是否发生变化，如果发生变化。</p>
+    <p>具体点来说：</p>
+    <p>
+        如果在Angular js的上下文环境中对绑定的值进行了更改，Angular js会自动调用$apply()，然后$apply()会自动调用
+        <span style="color: rgb(255,0,0);">$rootscope.$digest()</span>
+        在$rootscope作用域和其子作用域中进行$digest循环，这个循环是用来调用这些作用域中的$watch函数，对每个绑定值进行是否改变的判断，如果改变则会调用回调函数对view中的值或js中的值进行修改。
+    </p>
+    <p>如果不在Angular js的上下文环境中，却对绑定的值进行了修改，则需要手动调用$apply()来实现上述功能。</p>
+    <p>从大局上来说，这就是Angular js双向数据绑定的功能实现，</p>
+    <p>另外要说的是：</p>
+    <p>对于$apply()，有两种调用方式，一种是先执行函数，然后再其之后调用，即</p>
+    <p>{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; function()；</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; $scope.$apply()；</p>
+    <p>}</p>
+    <p>另一种是以运行的函数为参数进行调用，即</p>
+    <p>{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; $scope.$apply(function())；</p>
+    <p>}</p>
+    <p>
+        两种方式效果一样，但是一般都以第二种方式进行调用，因为第二种方式有一个异常处理机制，函数被传入进去时，会先加载到一个try...catch块
+        中，一旦函数发生错误，会被特定的函数处理。angularjs本身也是采用第二种方式进行的调用。
+    </p>
+    <p>
+        对于$digest()，它是在当前作用域及其子作用域进行$digest进行循环，这是要注意的地方。这也是为什么Angular js本身直接调用rootscope
+        下的$digest()的缘故了，覆盖所有的$watch。另外一次调用$digest()不止进行一次$digest循环，它会循环到没有绑定值发生变化或到达循环
+        上限10次，这样是为了当$watch()的回调函数引起绑定值的变化时也能进行绑定值在其他地方的改变。所以，调用$digest()引起的$digest循环
+        至少都是进行两次的，一次来进行值的变化，一次来确保没有值发生变化。但是，尽量不要在$watch()的回调函数中进行
+    </p>
+    <p>
+        对于$watch()，它的参数一个模块名，一个是回调函数，即$watch(string||function()，function(newVal，oldVal，scope))，newVal是
+        当前值，oldVal是前一次的值，scope是引用的当前作用域的参数，一般可不写。关于$watch的一点心得：
+        <a href="/pages/viewpage.action?pageId=25294555">$watch详解</a>
+    </p>
+
+    <h2><span style="color: rgb(255,0,0);">4、$parse、$eval、$watch、$observe</span></h2>
+    <p>$parse、$eval都是用来解析表达式的，而$eval的基础是$parse，它实质还是通过$parse实现的，只是$parse的一种封装。</p>
+    <p>
+        $watch、$observe都可以用来监视属性，同时$watch也能够用来监视表达式。但是，$observe只用在指令内部，监控带有插值表达式
+        （即类似{{}}这种的插值字符串）的属性。其他情况的属性监控，都用$watch。
+    </p>
+    <p>（具体的使用方法我还没有想明白，这里以后来补充）</p>
+
+    <h1><strong style="line-height: 1.25;">二、Dependency Injection</strong></h1>
+    <p>先说说angular各个组件的定义方法吧。</p>
+    <p>首先是定义模块 angular.module（“module name”，["dependency components name"]）</p>
+    <p>接着是定义模块的服务、指令和控制器
+        （"module name"）.(service || directive || controller) ( "service || directive || controller &nbsp;name"， ["dependency components name"，function（dependency components params）])
+    </p>
+    <p><span style="color: rgb(0,0,0);">再就是类似 config和run的定义，<span style="color: rgb(0,0,0);">（"module name"）.（config || run） (&nbsp;</span><span
+            style="color: rgb(0,0,0);">[</span><span
+            style="color: rgb(0,0,0);">"dependency components name"，function（<span>dependency components&nbsp;</span>params）</span><span
+            style="color: rgb(0,0,0);">]</span><span style="color: rgb(0,0,0);">&nbsp;)</span></span></p>
+    <p><span style="color: rgb(0,0,0);">还有一些其他组件，定义的方法与上面类似，就不一一说明了，大家遇到的时候自己注意就好。需要说明的是，<span
+            style="color: rgb(0,0,0);">dependency components name与<span style="color: rgb(0,0,0);">dependency components&nbsp;</span><span
+            style="color: rgb(0,0,0);">params要是同步的，例如你引入了 “$scope” 和“$rootscope”，那function的参数就是$scope和$rootscope，顺序也要是一致的。当然，<span
+            style="color: rgb(0,0,0);">dependency components name是可以省略的，前提是可以通过你的<span style="color: rgb(0,0,0);">dependency components&nbsp;</span><span
+            style="color: rgb(0,0,0);">params推断出你要注入的组件，从而找到相应的组件来使用。</span></span></span></span></span></p>
+    <p><span style="color: rgb(0,0,0);">再来说说依赖注入的定义把。</span></p>
+    <p><span style="color: rgb(0,0,0);">所谓依赖注入，就是一个组件或一个函数在定义的时候，需要使用到其他组件或函数，这时候就要将依赖的组件或函数注入进去，这也就导致定义的组件或函数在没有依赖的组件或函数存在时是没法正常运行的。依赖注入几乎贯穿angular的全过程。</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">然而，并不是每一个组件或函数都是可以随便依赖注入的，正如我上面提到的几个组件，服务、指令、控制器一般没什么要求，但是对于config和run，就有要求了，config只能注入用<span
+            style="color: rgb(0,0,0);">&nbsp; .provider()定义的服务和一些常量，因为它是对模块进行配置，要确保配置完成之前没有实例对象的进行，而run则刚好和config相反，它不能有<span
+            style="color: rgb(0,0,0);">&nbsp; .provider()定义的服务的注入，这是为了确保实例对象运行的时候不会有系统配置。</span></span></span></p>
+    <p><span style="color: rgb(0,0,0);">从上面也很容易看出一件事，run运行块是在config配置块之后运行的，说的这我就要说一下angular启动过程都干了说明，首先它会创建注入器和加载相应的模块，然后会进行配置文件的配置（用config），接着运行angular应用（用run），最后就是按照设定的程序最终运行了。</span>
+    </p>
+    <h1 id="id-关于angularjs文档的学习-三、Service"><strong><span style="color: rgb(0,0,0);"><span
+            style="color: rgb(0,0,0);"><span style="color: rgb(0,0,0);"><span style="color: rgb(0,0,0);"><span
+            style="color: rgb(0,0,0);">三、Service</span></span></span></span></span></strong></h1>
+    <p><span style="color: rgb(0,0,0);">对于Service，有五种定义方式：.constant() &nbsp;.value() &nbsp;&nbsp;<span
+            style="color: rgb(0,0,0);">&nbsp;.factory() &nbsp; &nbsp;</span><span style="color: rgb(0,0,0);">.service() &nbsp; &nbsp;.provider()。</span></span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">大家要记住，Service使用的实例对象永远是同一个，所以当你改变了实例对象，所有的该Service的实例对象都会改变。</span></p>
+    <h2 id="id-关于angularjs文档的学习-.constant()"><span style="color: rgb(0,0,0);">.constant()</span></h2>
+    <p><span style="color: rgb(0,0,0);">constant创建服务返回一个json对象，这个对象里可以有参数，可以有方法，并且属性和方法都可以在控制器中修改、新增。但是按照它的设计本意，一般constant创建的服务不会去修改它的内容，需要修改内容，最好用value来创建服务。</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">定义方式如下</span></p>
+    <p><span style="color: rgb(0,0,0);">module.constant(“name”，{</span></p>
+    <p><span style="color: rgb(0,0,0);">&nbsp; &nbsp; &nbsp; data1：data，</span></p>
+    <p><span style="color: rgb(0,0,0);">&nbsp; &nbsp; &nbsp; data2： {}，</span></p>
+    <p><span
+            style="color: rgb(0,0,0);">&nbsp; &nbsp; &nbsp;&nbsp;&nbsp;date3：function(param){ /do something }&nbsp;</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">})</span></p>
+    <h2 id="id-关于angularjs文档的学习-.value()"><span style="color: rgb(0,0,0);">.value()</span></h2>
+    <p><span style="color: rgb(0,0,0);">&nbsp;</span></p>
+    <p>value创建服务，第二个参数传入一个json对象，最终注入的就是这个json对象，<span style="color: rgb(0,0,0);">这个对象里可以有参数，可以有方法，并且属性和方法都可以在控制器中修改、新增。但是按照它的设计本意，</span>如果属性和方法需要被修改内容，就用value来创建服务。<br>constant和value主要就是用于存放一些数据或方法以供使用，区别是constant一般是存放固定内容，value存放可能会被修改的内容<span
+            style="color: rgb(0,0,0);">。</span></p>
+    <p><span style="color: rgb(0,0,0);">定义方式如下：</span></p>
+    <p>module.value(“name”，{</p>
+    <p>&nbsp; &nbsp; &nbsp; data1：data，</p>
+    <p>&nbsp; &nbsp; &nbsp; data2： {}，</p>
+    <p>&nbsp; &nbsp; &nbsp;&nbsp;date3：function(param){ /do something }&nbsp;</p>
+    <p>})</p>
+    <p>修改方式如下：</p>
+    <p>angular.extend(name,{})</p>
+    <h2 id="id-关于angularjs文档的学习-.factory()">.factory()</h2>
+    <p>factory创建服务，第二个参数传入一个函数，函数返回一个json对象，<span style="color: rgb(0,0,0);">这个对象里可以有参数，可以有方法，最终被注入的就是这个json对象。</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">&nbsp;</span>定义方式如下：</p>
+    <p>module.factory(“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;return {</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date1：date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date2：{}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date3：function(param){ /do something }&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp;}</p>
+    <p>})</p>
+    <p>当然，也可以类似这样：</p>
+    <p>module.factory(“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;function &nbsp; date3(param){ /do something }；</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;return {</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date1：date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date2：{}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date3：date3&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp;}</p>
+    <p>})</p>
+    <p><span style="color: rgb(0,0,0);"><span style="color: rgb(0,0,0);"><span style="color: rgb(0,0,0);"><span
+            style="color: rgb(0,0,0);"><span style="color: rgb(0,0,0);">&nbsp;</span></span></span></span></span></p>
+    <p>亦或类似我用函数定义一个对象，然后在service中return &nbsp;new+函数，即</p>
+    <p>module.factory(“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return &nbsp; new date()<br>})</p>
+    <p>function data(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date1=date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date2={}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date3=function(param){ /do something }&nbsp;</p>
+    <p>}</p>
+    <p>这也是可以的。</p>
+    <h2 id="id-关于angularjs文档的学习-.service()">.service()</h2>
+    <p>service创建服务，第二个参数传入一个构造函数，在es6语法下，还可以是一个类，最终注入的也是这个构造函数或类实例化的结果。</p>
+    <p>定义方式如下：</p>
+    <p>module.service(“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date1=date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date2={}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date3=function(param){ /do something }&nbsp;</p>
+    <p>})</p>
+    <p>或者是类</p>
+    <p>module.service(“name”，class{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;construct(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date1=date1，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date2=date2，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;date3(param){ /do something }&nbsp;</p>
+    <p>})</p>
+    <p>很明显，service这种定义方式是可以被factory代替的，所以几乎使用service定义的服务都可以用factory来代替。</p>
+    <h2 id="id-关于angularjs文档的学习-.provider()">.provider()</h2>
+    <p>provider创建服务，第二个参数传入一个函数，函数返回一个对象，对象里要有$get方法，这个方法返回一个json对象，<span style="color: rgb(0,0,0);">这个对象里可以有参数，可以有方法，最终被注入的就是这个json对象。</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">定义方式如下：</span></p>
+    <p><span style="color: rgb(0,0,0);">module.provider(</span>“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date1=date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date2={}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.date3=function(param){ /do something }&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.$get=function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; /do something/</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return {</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date4：date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date5：{}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date6：function(param){ /do something }&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>}<span style="color: rgb(0,0,0);">)</span></p>
+    <p><span style="color: rgb(0,0,0);">或者是</span></p>
+    <p><span style="color: rgb(0,0,0);">&nbsp;</span></p>
+    <p>module.provider(“name”，function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;return {</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date1：date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date2：{}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date3：function(param){ /do something }&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; $get：function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;/do something/</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; return {</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date4：date，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date5：{}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; date6：function(param){ /do something }&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; }</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}</p>
+    <p>&nbsp; &nbsp; &nbsp;}</p>
+    <p>})</p>
+    <p>说到底，就是在.service()或.factory()的基础上加上$get方法就好，这个方法返回一个对象。</p>
+    <p>值得注意的是，与上面的几个service定义方法不同的是，provider的依赖注入是在$get上进行，而不像其他的是在定义头上进行。</p>
+    <p>而且provider定义的服务是唯一的能通过config进行配置的服务，而且只有在配置之后才能和其他服务一些样这也是它的与众不同之处。</p>
+    <h1 id="id-关于angularjs文档的学习-四、Directive"><strong>四、Directive</strong></h1>
+    <p>以前我看指令的时候，感觉比较头疼，因为引入了很多参数，对这些参数都不太了解。这次学习directive 的时候，随着对各个参数的了解，发现指令也没那么难，还是比较简单的。</p>
+    <p>首先，要弄清指令是怎么创建的。指令的创建和服务的factory方法几乎一样，都是返回一个对象。例如：</p>
+    <p>module.directive("name", function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; return{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;params: date;</p>
+    <p>&nbsp; &nbsp; &nbsp;} &nbsp;</p>
+    <p>})</p>
+    <p><span style="color: rgb(255,0,0);">在指令中注入服务的方法是在创建时的函数那里注入即可，当然，你也可以只在controller中注入，那样就只供controller使用。</span></p>
+    <p>找到了创建的方法，最重要的是知晓创建时各个参数的意义了。我现在列出所有的参数：</p>
+    <p>module.directive("name", function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; return{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;priority：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;templateurl：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; replace：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; transclude：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; scope：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;controller：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;require：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;link：</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;compile：</p>
+    <p>&nbsp; &nbsp; &nbsp;} &nbsp;</p>
+    <p>})</p>
+    <p>现在我来一个个说明各个参数的意义：</p>
+    <h2 id="id-关于angularjs文档的学习-restrict">restrict</h2>
+    <p>用来设定指令作为说明使用，具体的参数有“E”、“A”、“C”、“M”</p>
+    <p>E：表示作为元素使用，即：&lt;directive title="xxx"&gt;&lt;/directive&gt;</p>
+    <p>A：表示作为属性使用，即：&lt;div &nbsp;directive="xxx"&gt;&lt;/div&gt;</p>
+    <p>C：表示作为类使用，即：&lt;div class="directive:xxx"&gt;&lt;/div&gt;</p>
+    <p>M：表示作为注释使用，即：&lt;!–Directive:directive&nbsp;xxx–&gt;</p>
+    <p>这个四种格式可以自由搭配的，搭配之后是并集关系，代表这些类型都可以使用。一般使用E、A的比较多，C和M的比较少。</p>
+    <h2 id="id-关于angularjs文档的学习-priority">priority</h2>
+    <p>很少使用的参数，用来设定指令的优先级，可以在指令和其他指令并存时想要优先实现的情况下使用。例如ng-init和ng-repeat就有优先级关系。</p>
+    <p>参数的值为数字。</p>
+    <h2 id="id-关于angularjs文档的学习-teminal">teminal</h2>
+    <p>很少使用的参数，参数值为布尔型。</p>
+    <p>true：表示优先级低于此指令的指令都不执行，高于或相同优先级可以执行。</p>
+    <p>false：表示上述限制不存在。</p>
+    <p>默认是false。</p>
+    <h2 id="id-关于angularjs文档的学习-template">template</h2>
+    <p>模板参数，参数值为字符串或函数。</p>
+    <p>不管是字符串还是函数，里面的内容都表示一段html代码，用来覆盖指令所在的html元素的内容。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>如果是使用的函数，会有一定的差别，这个函数里只有两个参数element 和attrs，前一个参数代表指令所在的元素，后一个是这个元素的所有属性的集合。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template：function(element,attrs){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; var _html = '';<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; _html += '&lt;div&gt;'+attrs.title+'&lt;/div&gt;';<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        return _html;<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp;}</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}</p>
+    <p>})</p>
+    <p><s><span class="inline-comment-marker valid" data-ref="2304cf37-9d2d-4315-9374-512ccbf9ed68">&lt;directive &nbsp;title=“xx”&gt;&lt;/directive&gt;会被渲染成：&lt;div&gt;xx&lt;/div&gt;</span></s>
+    </p>
+    <p><span class="inline-comment-marker valid" data-ref="2304cf37-9d2d-4315-9374-512ccbf9ed68">&lt;directive &nbsp;title=“xx”&gt;&lt;/directive&gt;会被渲染成：<span
+            style="color: rgb(255,0,0);">&lt;directive &nbsp;title=“xx”&gt;<span style="color: rgb(255,0,0);">&lt;div&gt;xx&lt;/div&gt;</span>&lt;/directive&gt;</span></span>
+    </p>
+    <p>看，差别出来了，如果是字符串，模板内容是覆盖到元素的内容而不包括元素本身，如果是函数<span style="color: rgb(0,0,0);"><s>，则会覆盖整个元素。</s><span
+            style="color: rgb(255,0,0);">，仍然是覆盖元素内容</span></span></p>
+    <h2 id="id-关于angularjs文档的学习-templateUrl">templateUrl</h2>
+    <p>也是模板参数，与上面不同的是它的参数是html文件的路径字符串或者函数。</p>
+    <p>函数的内容与上面的一致的，而所谓的html文件的路径，其实和上面的字符串也是大同小异，不过是把上面的字符串内容放到一个html文件里面，然后引入进来。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;templateUrl："a.html"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>a.html的内容：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;</p>
+    <p>&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>函数的例子就不补充了，和上面一样。</p>
+    <p>&nbsp;</p>
+    <p><span style="color: rgb(255,0,0);">需要说明的事，现在的web应用在上线时都会进行优化，这样就导致所需的模板的路径并不是你所写的那样，除非你能保证上线时你的模板路径能够匹配你书写的路径，否则，请不要使用这个参数，改用template。</span>
+    </p>
+    <h2 id="id-关于angularjs文档的学习-replace">replace&nbsp;</h2>
+    <p>覆盖参数，参数值为布尔型。</p>
+    <p>true：覆盖指令所在的整个元素。</p>
+    <p>false：只 覆盖指令所在的元素的内容。</p>
+    <p>默认是false。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;replace：true/false，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>如果参数是true，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;</p>
+    <p>如果参数是false，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>&nbsp;</p>
+    <p><span style="color: rgb(255,0,0);">这个参数在以后的版本中将要被废除了，而现在使用的时候需要注意，当replace为true时，你的模板中一定要有个根节点，理由也很简单，没有根节点，你用说明去取代所在的元素呢？</span>
+    </p>
+    <h2 id="id-关于angularjs文档的学习-transclude">transclude</h2>
+    <p>提取参数，参数值为布尔型或“element”。</p>
+    <p>true：提取指令所在元素的内容放到指令的模板的的特定位置（覆盖掉标记ng-transclude所在元素的内容）。</p>
+    <p>false：不提取。</p>
+    <p>element：提取指令所在元素的整个元素放到指令的模板的特定位置（覆盖掉标记ng-transclude所在元素的内容）。</p>
+    <p>默认是false。</p>
+    <p>需要注意的是，如果参数为element，提取整个元素，放在指令的模板上，就会出现指令里有着同样的指令，而且这是个无限循环。本来，这是应该报错的，但是由于语言设定的问题，这里不会报错，而是将指令所在的元素转换为注释。</p>
+    <p>这里的解决方法是加上replace：true，我没有弄清楚为什么要这么做，可能跟底层的一些DOM操作有关吧。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;transclude：true/false/element，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3 ng-transclude&gt;hello
+        world&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>如果参数是true，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3 &nbsp;ng-transclude&gt;what
+        fuck&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>如果参数是false，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3 ng-transclude&gt;hello
+        world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>如果参数是“element”，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;!--directive:undefined–&gt;</p>
+    <p>如果参数是“element”，同时加上replace：true，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;div&gt;&lt;h3 ng-transclude&gt;&lt;directive&gt;what
+        fuck&lt;/directive&gt;&lt;/h3&gt;&lt;/div&gt;</p>
+    <h2 id="id-关于angularjs文档的学习-scope">scope</h2>
+    <p>作用域参数，参数值为布尔值或{}。</p>
+    <p>true：继承父作用域，并创建一个新的子作用域，这个子作用域只能指令模板中的$scope元素使用。</p>
+    <p>false：只继承父作用域。</p>
+    <p>{}：创建一个全新的隔离作用域。</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;scope：true/false，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;{{xxx}}&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>如果参数是true，&lt;directive &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;，这里要说明的是，如果指令本身有子作用域且子作用域中对xxx赋值为bbb，那会渲染成：&lt;directvie
+        &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;bbb&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>如果参数是false，&lt;directive &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>&nbsp;</p>
+    <p>这里单独说明值为{}的情况</p>
+    <p>{}怎么用呢，是这样的，{}可以将这个隔离作用域之外的属性绑定到作用域之内的属性上，从而实现隔离作用域内对隔离作用域外的属性的调用，当然，这种绑定只能绑定指令所在元素的属性。</p>
+    <p>既然知道能够绑定了，接下来要介绍的就是三种绑定策略：@，=，&amp;</p>
+    <p>@用来进行单向文本绑定，只能针对字符串，不能针对对象。</p>
+    <p>=用来进行双向绑定，字符串和对象都能针对</p>
+    <p>&amp;用来进行函数的绑定</p>
+    <p>举个例子：</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;scope：{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;xxx：”@xxx“</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;{{xxx}}&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>&lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>这就是@的功能体现，请牢记：<span style="color: rgb(255,0,0);">单向的，针对字符串的</span></p>
+    <p><span style="color: rgb(255,0,0);"><br></span></p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;scope：{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;xxx：”=xxx“</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;input &nbsp;ng-model="xxx"
+        &nbsp;/&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>&lt;div&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;</p>
+    <p>&lt;/div&gt;</p>
+    <p>会被渲染成：</p>
+    <p>&lt;div&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&lt;div&gt;&lt;input &nbsp;ng-model="<span
+            style="color: rgb(255,0,0);">xxx</span>" &nbsp;/&gt;&lt;/div&gt;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;/directive&gt;</p>
+    <p>&lt;/div&gt;</p>
+    <p>
+        这里能够体现的就是双向绑定的功能，渲染的两个xxx，我设置成两个不同的颜色就是为了说明这不是一个作用域的xxx，黑色的是指令外的作用域，红色的是指令内的作用域，这两个值是不对等的，但是有指令里=，这两个值双向绑定了，这就使得在第一个input里填写的内容，会在第二个input里出现，而在第二个input里填写的内容，会在第一个input里出现。</p>
+    <p>这就是=的功能体现，请牢记：<span style="color: rgb(255,0,0);">双向的，针对字符串和对象的。</span></p>
+    <p><span style="color: rgb(255,0,0);"><br></span></p>
+    <p><span style="color: rgb(255,0,0);">&nbsp;</span></p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;scope：{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;xxx：”&amp;xxx“</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;&lt;button &nbsp;ng-click="xxx"&gt;&lt;/button&gt;&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p><span style="color: rgb(255,0,0);">&nbsp;</span></p>
+    <p>})</p>
+    <p><span style="color: rgb(255,0,0);">&nbsp;</span></p>
+    <p>&lt;directive &nbsp;xxx=“aaa()”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;&lt;button
+        &nbsp;ng-click="aaa()"&gt;&lt;/button&gt;&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
+    <p>这里体现的就是绑定函数使用的功能了，其实和上面相比差别就在于使用的符号不同，绑定之后使用的方法还是照常的。</p>
+    <p><span style="color: rgb(255,0,0);">如果想给函数传递参数，就在函数中添加要加入的参数名称，而指令在使用时，就要以对象的形式给参数赋值。例如：</span></p>
+    <p><span style="color: rgb(255,0,0);">xxx=“aaa(m,n)”，那么指令在使用时，需要xxx({m:m,n:n})这样使用</span></p>
+    <p>这就是&amp;的功能，请牢记：<span style="color: rgb(255,0,0);">绑定函数。</span></p>
+    <h2 id="id-关于angularjs文档的学习-controller、link、require、compile">&nbsp;controller 、link 、require&nbsp;、compile</h2>
+    <p>这四个参数我放到一起，因为彼此间有联系。</p>
+    <p>首先，对于controller、link、compile这三个函数的运行关系，运行顺序是controller先运行、compile或link后运行，link与compile不兼容。</p>
+    <p>
+        为啥不兼容呢，这是因为说到compile里有link的回调的缘故了，compile属于编译函数，它会编译代码然后用link去绑定内容到相应的scope，准确的来说compile通过编译生成了dom对象，这就是为什么compile和link不兼容的原因了。</p>
+    <p>require这个函数是用来进行指令间的通信的。它可以将一个指令的里的controller调用到另一个指令中，然后通过compile或link函数去使用。</p>
+    <p>具体的使用方法如下：</p>
+    <p>这里我直接使用别人举得例子</p>
+    <pre class="php">phonecatDirectives.directive('exampleDirective', function() {
+    return {
+        restrict: 'E',
+        template: '&lt;p&gt;Hello {{number}}!&lt;/p&gt;',
+        controller: function($scope, $element){
+            $scope.number = $scope.number + "2222";
+        },
+        link: function(scope, element, attrs) {
+            scope.number = scope.number + "3333";
+        },
+        compile: function(element, attrs) {
+            return {
+                pre: function preLink(scope, element, attrs) {
+                    scope.number = scope.number + "4444 ";
+                },
+                post: function postLink(scope, element, attrs) {
+                    scope.number = scope.number + "5555";
+                }
+            };
+        }
+    }
+});
+
+//controller.js添加
+dtControllers.controller('directive2',['$scope',
+    function($scope) {
+        $scope.number = '1111 ';
+    }
+]);
+
+//html
+&lt;body ng-app="phonecatApp"&gt;
+    &lt;div ng-controller="directive2"&gt;
+        &lt;example-directive&gt;&lt;/example-directive&gt;
+    &lt;/div&gt;
+&lt;/body&gt;</pre>
+    <p>这个代码运行的结果，就是hello 1111 2222 4444 5555，如果去掉compile，运行结果就是hello 1111 2222 3333。</p>
+    <p>现在来说一下参数吧，controller、compile和link里一般有三个参数：（controller里加入美元符号以与其他两个做区分）</p>
+    <p>scope：若指令中没有scope参数，指指令所在元素的scope对象；若有，指指令中scope的对象</p>
+    <p>element：指令所在元素的内容集合</p>
+    <p>attributes：指令所在元素的属性集合</p>
+    <p>&nbsp;</p>
+    <p>现在来说一下require</p>
+    <p>前面也说了，是调用某个指令中的controller实现的。举个例子：</p>
+    <p>假设上面的内容存在</p>
+    <p>module.directive("directvie",function(){</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return&nbsp;{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;restrict："E"，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;require：“[^directive_name，..，..，..]”</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;scope：{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;xxx：”&amp;xxx“</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}，</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;template："&lt;div&gt;&lt;h3&gt;&lt;button &nbsp;ng-click="xxx"&gt;&lt;/button&gt;&lt;/h3&gt;&lt;/div&gt;"</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;link：function（scope，element，attrs，controller）{</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; controller[m].funciton();&nbsp;</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>})</p>
+    <p>这里的controller指代就是require里的指令，如果上述的require是个数组，这里的controller也就是个数组，两者的数据是对应的，调用时也需要通过数组的方式调用。</p>
+    <p><span style="color: rgb(255,0,0);">要注意的是，require里的指令名字前是可以有符号的，比如上面的^符号。<span style="color: rgb(0,0,0);">对应的符号及其意义如下：</span></span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">无符号：在require所在的指令中查找控制器，没有会抛出错误</span></p>
+    <p><span style="color: rgb(0,0,0);">^符号：在require所在的指令和指令的父指令中查找控制器，没有会抛出错误</span></p>
+    <p><span style="color: rgb(0,0,0);"><span
+            style="color: rgb(0,0,0);">^^符号：在require所在的指令的父指令中查找控制器，没有会抛出错误</span></span></p>
+    <p><span style="color: rgb(0,0,0);">?符号：<span
+            style="color: rgb(0,0,0);">在require所在的指令中查找控制器，没有会把controller参数置空</span></span></p>
+    <p><span style="color: rgb(0,0,0);">以上的符号可以将?和^或^^组合</span></p>
+    <h1 id="id-关于angularjs文档的学习-五、filter"><strong><span style="color: rgb(0,0,0);">五、filter</span></strong></h1>
+    <p><span
+            style="color: rgb(0,0,0);">过滤器这个组件用的不能说很多，也不能说少。angular 本身就带有一些过滤器，但这些过滤器往往无法满足我们的需求，因此就要求我们能够自己去编写过滤器。</span>
+    </p>
+    <p><span style="color: rgb(0,0,0);">首先我来说一下过滤器的用法。</span></p>
+    <p><span style="color: rgb(0,0,0);">过滤器可以在controller、directive、service中使用，只要注入进去即可，使用是以函数的方式去使用，如下：</span></p>
+    <p>controller('FilterController', ['filterFilter', function(filterFilter) {<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp;this.array = [&nbsp;<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'Tobias'},<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'Jeff'},<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'Brian'},<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'Igor'},<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'James'},<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp;{name: 'Brad'}<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;];<br>&nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;this.filteredArray = filterFilter(this.array, 'a');<br>}])</p>
+    <p><span style="color: rgb(255,0,0);">需要注意的是，注入的方式有两种，一种是以过滤器名称+Filter的方式注入，就如上面这种，另外一个则是注入$filter服务，然后使用$filter（过滤器名称）去注入。</span>
+    </p>
+    <p>过滤器也可以在view中直接使用，使用格式如下：</p>
+    <pre class="ng-scope"><code><span class="pun">{{</span><span class="pln"> expression </span><span
+            class="pun">|</span><span class="pln"> filter </span><span class="pun">}}：这个是单独使用过滤器</span></code></pre>
+    <pre class="ng-scope"><code><span class="pun">{{</span><span class="pln"> expression </span><span
+            class="pun">|</span><span class="pln"> filter1 </span><span class="pun">|</span><span
+            class="pln"> filter2 </span><span class="pun">|</span><span class="pln">&nbsp;</span><span
+            class="pun">...</span><span class="pln">&nbsp;</span><span class="pun">}}：这个是链接使用过滤器，意思是一层一层的过滤，过滤结果不断向后面的过滤器传递过滤</span></code></pre>
+    <pre class="ng-scope"><code><span class="pun">{{</span><span class="pln"> expression </span><span
+            class="pun">|</span><span class="pln"> filter</span><span class="pun">:</span><span
+            class="pln">argument1</span><span class="pun">:</span><span class="pln">argument2</span><span class="pun">:...</span><span
+            class="pln">&nbsp;</span><span class="pun">}}：这个是给过滤器添加参数</span></code></pre>
+    <p><span style="color: rgb(255,0,0);">注意，双括号里的是一个表达式，所以用双括号，其意义在这。</span></p>
+    <p>接下来先说一下angular有哪些自带的过滤器：</p>
+    <p><strong>currency：设置货币符号，不加参数默认使用所在区域的语言，也可以用参数设置语言</strong></p>
+    <p>{{ 3600 | currency}}：$<span style="color: rgb(0,0,0);">3,600.00 &nbsp; &nbsp; &nbsp;&nbsp;</span>{{ 3600 |
+        currency:"￥"}}：<span style="color: rgb(0,0,0);">￥3,600.00</span></p>
+    <p><strong><strong>number：设置数字字符的小数点位数，不管是数字还是数字字符都能转换，其他的都会返回空，要给参数，不给返回原数字字符</strong></strong></p>
+    <p>{{ "11a" | number:2}} ：无输出 &nbsp; &nbsp;&nbsp;{{ "111" | number:2}}：111.00 &nbsp; &nbsp; &nbsp;&nbsp;{{ 111 |
+        number:2}}：111.00</p>
+    <p><strong><strong><strong>lowercase：字符串转化为小写</strong></strong></strong></p>
+    <p>{{ "AAA" | lowercase}}：aaa</p>
+    <p><strong><strong><strong><strong>uppercase：字符串转化为大写</strong></strong></strong></strong></p>
+    <p>{{ "aaa" | uppercase}}：AAA</p>
+    <p><strong>json：json或js对象转化为字符串</strong></p>
+    <p>\{\{ {"name":"dreamapple","language":"AngularJS"} | json }}：{"name":"dreamapple","language":"AngularJS"}</p>
+    <p>
+        <strong><strong><strong><strong><strong><strong>date：将日期过滤成你想要的格式</strong></strong></strong></strong></strong></strong>
+    </p>
+    <p><span style="color: rgb(0,0,0);">{{ today | date: "yyyy - mm - dd"}}</span><span style="color: rgb(0,0,0);">：2015 - 15 - 13 &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span><span
+            style="color: rgb(0,0,0);">{{ today | date: "yyyy - mm - dd HH:mm::ss"}}</span><span
+            style="color: rgb(0,0,0);">：2015 - 18 - 13 20:18::38</span></p>
+    <p><strong>orderby：按照某一项排序，要给参数</strong></p>
+    <pre class="prettyprint xml">{{ childrenArray | orderBy : 'age' }}：按age属性值进行排序       {{ childrenArray | orderBy : ['age','name'] }}：如果age相同，按照name进行排序</pre>
+    <p class="prettyprint xml"><strong>&nbsp;limitTo：限定数组或字符串的长度，要给参数，不给参数返回原有字符串或数组</strong></p>
+    <pre class="prettyprint cs">\{\{ childrenArray | limitTo : <span class="number"
+                                                                   style="color: rgb(0,153,153);">2</span> }}：显示数组或字符串前两项</pre>
+    <p><strong>filter：过滤数组，返回一个子数组，需要给参数，不给参数返回原有字符串或数组</strong></p>
+    <p class="prettyprint cpp">\{\{ childrenArray | filter : <span class="string"
+                                                                 style="color: rgb(221,17,68);">'a'</span> }} ：<span
+            class="comment" style="color: rgb(0,0,0);">匹配属性值中含有a的 </span>{{ childrenArray | filter : <span
+            class="number" style="color: rgb(0,153,153);">4</span> }} ：<span class="comment" style="color: rgb(0,0,0);">匹配属性值中含有4的</span>
+        \{\{ childrenArray | filter : {name : <span class="string" style="color: rgb(221,17,68);">'i'</span>} }} ：<span
+                class="comment" style="color: rgb(0,0,0);">参数是对象，匹配name属性中含有i的 </span>{{childrenArray | filter : func }}
+        ：<span class="comment" style="color: rgb(0,0,0);">参数是函数，指定返回age&gt;4的</span></p>
+    <p class="prettyprint cpp"><span style="color: rgb(0,0,0);">说完自带的，再来说说自定义的，其实自定义的和定义指令、服务那些没啥差别，格式如下：</span></p>
+    <p>app.filter('name',function(){<br>&nbsp; &nbsp; &nbsp; &nbsp;return function(inputArray){<br>&nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;//do something<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return array;<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;}<br>});
+    </p>
+    <p>这是一个例子，例子中第一个参数是过滤器名字，第二个参数是构造函数，可以注入其他服务、指令或过滤器之类的。构造函数要返回一个函数，这个函数就是过滤处理函数，过滤函数的参数就是给过滤器加的参数，
+        函数要返回一个处理后的结果。当然，这只是这样一个意思，写法多变，只要记住要返回一个函数，函数返回处理结果就好了，比如你还可以这样写：</p>
+    <p>app.filter('name',function(){<br>&nbsp; &nbsp; &nbsp; &nbsp; function(inputArray){<br>&nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;//do something<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+        &nbsp; &nbsp; &nbsp; &nbsp; return array;<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }</p>
+    <p>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;return function<br>});</p>
+    <p>或者你还可以将构造函数单独写在一边，然后引入就好，这和上面的指令的写法很相似。</p>
+    <p>其他的就没什么好说的了，功能性的东西就是自己去写了。</p>
+    <h1 id="id-关于angularjs文档的学习-六、unittesting"><strong>六、unit testing</strong></h1>
+    <p>正如这个名字，这一节是介绍单元测试的。</p>
+    <p>单元测试的意义很大，在我看来，就好比你做一件事，必须要证明你做的是对的，不然不能让人信服，而单元测试，就承担着这方面的功能。</p>
+    <p>在说具体的使用方法之前，我们要先知道三个angular推荐的测试插件：karma、jasmine、angular-mocks。暂时我不具体描述着三者，因为我也还没有具体使用过，大家先记住测试是依赖这三个东西的。</p>
+    <p>让我们进入主题，到底该怎么进行单元测试呢，先看看具体的格式，以controller的测试为例吧：</p>
+    <div class="code panel pdl conf-macro output-block" data-hasbody="true" data-macro-name="code"
+         style="border-width: 1px;">
+        <div class="codeContent panelContent pdl">
+            <div>
+                <div id="highlighter_562465" class="syntaxhighlighter sh-confluence nogutter  plain">
+                    <div class="toolbar"><span><a href="#" class="toolbar_item command_help help">?</a></span></div>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                        <tr>
+                            <td class="code">
+                                <div class="container" title="Hint: double-click to select code">
+                                    <div class="line number1 index0 alt2"><code class="plain plain">angular.module('app',
+                                        [])</code></div>
+                                    <div class="line number2 index1 alt1"><code class="plain plain">.controller('PasswordController',
+                                        function PasswordController($scope) {</code></div>
+                                    <div class="line number3 index2 alt2"><code class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.password = '';</code></div>
+                                    <div class="line number4 index3 alt1"><code class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.grade = function() {</code></div>
+                                    <div class="line number5 index4 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">var size = $scope.password.length;</code></div>
+                                    <div class="line number6 index5 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">if (size &gt; 8) {</code></div>
+                                    <div class="line number7 index6 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.strength = 'strong';</code></div>
+                                    <div class="line number8 index7 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">} else if (size &gt; 3) {</code></div>
+                                    <div class="line number9 index8 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.strength = 'medium';</code></div>
+                                    <div class="line number10 index9 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">} else {</code></div>
+                                    <div class="line number11 index10 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.strength = 'weak';</code></div>
+                                    <div class="line number12 index11 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">}</code></div>
+                                    <div class="line number13 index12 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">};</code>
+                                    </div>
+                                    <div class="line number14 index13 alt1"><code class="plain plain">});</code></div>
+                                    <div class="line number15 index14 alt2"><code class="plain spaces">&nbsp;</code>&nbsp;
+                                    </div>
+                                    <div class="line number16 index15 alt1"><code class="plain plain">//注意，上下两块代码并不在一个js文件中，只是为了方便而放在一起</code>
+                                    </div>
+                                    <div class="line number17 index16 alt2"><code class="plain spaces">&nbsp;</code>&nbsp;
+                                    </div>
+                                    <div class="line number18 index17 alt1"><code class="plain spaces">&nbsp;</code>&nbsp;
+                                    </div>
+                                    <div class="line number19 index18 alt2"><code class="plain plain">describe('PasswordController',
+                                        function() {</code></div>
+                                    <div class="line number20 index19 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">beforeEach(module('app'));</code>
+                                    </div>
+                                    <div class="line number21 index20 alt2">&nbsp;</div>
+                                    <div class="line number22 index21 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">var
+                                        $controller;</code></div>
+                                    <div class="line number23 index22 alt2">&nbsp;</div>
+                                    <div class="line number24 index23 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">beforeEach(inject(function(_$controller_){</code>
+                                    </div>
+                                    <div class="line number25 index24 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">// The injector unwraps the underscores (_) from around
+                                        the parameter names when matching</code></div>
+                                    <div class="line number26 index25 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$controller = _$controller_;</code></div>
+                                    <div class="line number27 index26 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">}));</code></div>
+                                    <div class="line number28 index27 alt1">&nbsp;</div>
+                                    <div class="line number29 index28 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">describe('$scope.grade',
+                                        function() {</code></div>
+                                    <div class="line number30 index29 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">var $scope, controller;</code></div>
+                                    <div class="line number31 index30 alt2">&nbsp;</div>
+                                    <div class="line number32 index31 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">beforeEach(function() {</code></div>
+                                    <div class="line number33 index32 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope = {};</code></div>
+                                    <div class="line number34 index33 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">controller = $controller('PasswordController', { $scope:
+                                        $scope });</code></div>
+                                    <div class="line number35 index34 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">});</code></div>
+                                    <div class="line number36 index35 alt1">&nbsp;</div>
+                                    <div class="line number37 index36 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">it('sets the strength to "strong" if the password length
+                                        is &gt;8 chars', function() {</code></div>
+                                    <div class="line number38 index37 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.password = 'longerthaneightchars';</code></div>
+                                    <div class="line number39 index38 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.grade();</code></div>
+                                    <div class="line number40 index39 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">expect($scope.strength).toEqual('strong');</code></div>
+                                    <div class="line number41 index40 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">});</code></div>
+                                    <div class="line number42 index41 alt1">&nbsp;</div>
+                                    <div class="line number43 index42 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">it('sets the strength to "weak" if the password length
+                                        &lt;3 chars', function() {</code></div>
+                                    <div class="line number44 index43 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.password = 'a';</code></div>
+                                    <div class="line number45 index44 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$scope.grade();</code></div>
+                                    <div class="line number46 index45 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">expect($scope.strength).toEqual('weak');</code></div>
+                                    <div class="line number47 index46 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">});</code></div>
+                                    <div class="line number48 index47 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">});</code>
+                                    </div>
+                                    <div class="line number49 index48 alt2"><code class="plain plain">});</code></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p>现在让我来一一说明一下：</p>
+    <p>describe（“information”，function(){}），这个语句是来进行一组测试时使用的，第一个参数是描述的信息，第二个参数是函数，表示要执行的操作。这个是由jasmint提供的。</p>
+    <p>it（“information”，function(){}），这个语句是进行某一个点的测试时使用的，参数意义如上。这个是由jasmint提供的。</p>
+    <p>beforeEach（），让我们在测试前执行一些代码。这个是由jasmint提供的。</p>
+    <p><span class="inline-comment-marker valid" data-ref="b397c106-048f-4d5f-9101-f30f6d58abe3">module（'name'），让我们导入某个模块，让模块可用，这样我们才能测试模块里的东西。这个由angular-mocks提供。</span>
+    </p>
+    <p>
+        inject（funciton（services）），让我们注入某些服务，但是注入的服务都有个硬性规定，注入的服务都要在前后添加下划线，而且注入的服务并不能直接使用，必须先付给另外一个变量才行。添加下划线是为了保持变量名的干净，防止和你测试中的变量名重名。至于为什么要先付给一个变量，我还没有弄清楚，这里我们先不深究，因为很有可能是angular的硬性规定。这里的服务可以包括_$controller_、_$filter
+        _、_$rootScope&nbsp;_、_$compile&nbsp;_等，具体应该还有很多，在angular的文档中也没有详细的说明，应该在angular-mocks中可以看到，等我熟悉了上面那三个测试插件后，再来详细说明。</p>
+    <p>上面对controller的测试实例看过之后，大家应该可以很好的了解了吧，再看一个filter的例子：</p>
+    <div class="code panel pdl conf-macro output-block" data-hasbody="true" data-macro-name="code"
+         style="border-width: 1px;">
+        <div class="codeContent panelContent pdl">
+            <div>
+                <div id="highlighter_850087" class="syntaxhighlighter sh-confluence nogutter  plain">
+                    <div class="toolbar"><span><a href="#" class="toolbar_item command_help help">?</a></span></div>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                        <tr>
+                            <td class="code">
+                                <div class="container" title="Hint: double-click to select code">
+                                    <div class="line number1 index0 alt2"><code class="plain plain">myModule.filter('length',
+                                        function() {</code></div>
+                                    <div class="line number2 index1 alt1"><code class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">return function(text) {</code></div>
+                                    <div class="line number3 index2 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">return ('' + (text || '')).length;</code></div>
+                                    <div class="line number4 index3 alt1"><code class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">}</code></div>
+                                    <div class="line number5 index4 alt2"><code class="plain plain">});</code></div>
+                                    <div class="line number6 index5 alt1">&nbsp;</div>
+                                    <div class="line number7 index6 alt2"><code class="plain plain">describe('length
+                                        filter', function() {</code></div>
+                                    <div class="line number8 index7 alt1">&nbsp;</div>
+                                    <div class="line number9 index8 alt2"><code class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">var $filter;</code></div>
+                                    <div class="line number10 index9 alt1">&nbsp;</div>
+                                    <div class="line number11 index10 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">beforeEach(inject(function(_$filter_){</code>
+                                    </div>
+                                    <div class="line number12 index11 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$filter = _$filter_;</code></div>
+                                    <div class="line number13 index12 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">}));</code></div>
+                                    <div class="line number14 index13 alt1">&nbsp;</div>
+                                    <div class="line number15 index14 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">it('returns
+                                        0 when given null', function() {</code></div>
+                                    <div class="line number16 index15 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">var length = $filter('length');</code></div>
+                                    <div class="line number17 index16 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">expect(length(null)).toEqual(0);</code></div>
+                                    <div class="line number18 index17 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">});</code>
+                                    </div>
+                                    <div class="line number19 index18 alt2">&nbsp;</div>
+                                    <div class="line number20 index19 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">it('returns
+                                        the correct value when given a string of chars', function() {</code></div>
+                                    <div class="line number21 index20 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">var length = $filter('length');</code></div>
+                                    <div class="line number22 index21 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">expect(length('abc')).toEqual(3);</code></div>
+                                    <div class="line number23 index22 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">});</code>
+                                    </div>
+                                    <div class="line number24 index23 alt1"><code class="plain plain">});</code></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p>大家也许会疑惑，为什么这里不需要导入模块？开始我也疑惑了一下，后来发现，这个给出的例子，定义和测试是直接放在一个js文件中的，因此不需要载入模块就能使用。这也就告诉我们上面时候需要引入模块了。</p>
+    <p>指令的测试注入的服务要多一些，首先要注入$compile元素进行编译，同时要注入$rootScope元素进行更新。</p>
+    <div class="code panel pdl conf-macro output-block" data-hasbody="true" data-macro-name="code"
+         style="border-width: 1px;">
+        <div class="codeContent panelContent pdl">
+            <div>
+                <div id="highlighter_85053" class="syntaxhighlighter sh-confluence nogutter  plain">
+                    <div class="toolbar"><span><a href="#" class="toolbar_item command_help help">?</a></span></div>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                        <tr>
+                            <td class="code">
+                                <div class="container" title="Hint: double-click to select code">
+                                    <div class="line number1 index0 alt2"><code class="plain plain">app.directive('aGreatEye',
+                                        function () {</code></div>
+                                    <div class="line number2 index1 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">return {</code></div>
+                                    <div class="line number3 index2 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">restrict: 'E',</code></div>
+                                    <div class="line number4 index3 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">replace: true,</code></div>
+                                    <div class="line number5 index4 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">template: '&lt;h1&gt;lidless, wreathed in flame, {{1 +
+                                        1}} times&lt;/h1&gt;'</code></div>
+                                    <div class="line number6 index5 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">};</code></div>
+                                    <div class="line number7 index6 alt2"><code class="plain plain">});</code></div>
+                                    <div class="line number8 index7 alt1"><code class="plain spaces">&nbsp;</code>&nbsp;
+                                    </div>
+                                    <div class="line number9 index8 alt2"><code class="plain spaces">&nbsp;</code>&nbsp;
+                                    </div>
+                                    <div class="line number10 index9 alt1"><code class="plain plain">describe('Unit
+                                        testing great quotes', function() {</code></div>
+                                    <div class="line number11 index10 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">var
+                                        $compile,</code></div>
+                                    <div class="line number12 index11 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$rootScope;</code></div>
+                                    <div class="line number13 index12 alt2">&nbsp;</div>
+                                    <div class="line number14 index13 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">// Load
+                                        the myApp module, which contains the directive</code></div>
+                                    <div class="line number15 index14 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">beforeEach(module('myApp'));</code>
+                                    </div>
+                                    <div class="line number16 index15 alt1">&nbsp;</div>
+                                    <div class="line number17 index16 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">// Store
+                                        references to $rootScope and $compile</code></div>
+                                    <div class="line number18 index17 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">// so they
+                                        are available to all tests in this describe block</code></div>
+                                    <div class="line number19 index18 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">beforeEach(inject(function(_$compile_,
+                                        _$rootScope_){</code></div>
+                                    <div class="line number20 index19 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">// The injector unwraps the underscores (_) from around
+                                        the parameter names when matching</code></div>
+                                    <div class="line number21 index20 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$compile = _$compile_;</code></div>
+                                    <div class="line number22 index21 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$rootScope = _$rootScope_;</code></div>
+                                    <div class="line number23 index22 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code
+                                            class="plain plain">}));</code></div>
+                                    <div class="line number24 index23 alt1">&nbsp;</div>
+                                    <div class="line number25 index24 alt2"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">it('Replaces
+                                        the element with the appropriate content', function() {</code></div>
+                                    <div class="line number26 index25 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">// Compile a piece of HTML containing the
+                                        directive</code></div>
+                                    <div class="line number27 index26 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">var element = $compile("&lt;a-great-eye&gt;&lt;/a-great-eye&gt;")($rootScope);</code>
+                                    </div>
+                                    <div class="line number28 index27 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">// fire all the watches, so the scope expression {{1 +
+                                        1}} will be evaluated</code></div>
+                                    <div class="line number29 index28 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">$rootScope.$digest();</code></div>
+                                    <div class="line number30 index29 alt1"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">// Check that the compiled element contains the
+                                        templated content</code></div>
+                                    <div class="line number31 index30 alt2"><code class="plain spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code
+                                            class="plain plain">expect(element.html()).toContain("lidless, wreathed in
+                                        flame, 2 times");</code></div>
+                                    <div class="line number32 index31 alt1"><code
+                                            class="plain spaces">&nbsp;&nbsp;</code><code class="plain plain">});</code>
+                                    </div>
+                                    <div class="line number33 index32 alt2"><code class="plain plain">});</code></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p>有些东西不好说，从例子来看更能够明白，指令的比较很多时候是比较内容是否包含什么，写法也和上面的expect().toEqual()不同。</p>
+    <p>其实还有一些测试需要注意的地方，但是由于没怎么用到，所以也很难去介绍，等以后用到了，再来补充。</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp; &nbsp;</p>
+    <p class="prettyprint cpp"><span style="color: rgb(0,0,0);">&nbsp;</span></p>
+    <p class="prettyprint xml"><strong><br></strong></p>
+    <p class="prettyprint xml"><strong><br></strong></p>
+    <p><strong><br></strong></p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p><strong><br></strong></p>
+    <p><strong><br></strong></p>
+    <p><strong><br></strong></p>
+    <p>..............................................待续..........................................................</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+</div>
