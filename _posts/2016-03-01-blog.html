@@ -1,0 +1,32 @@
+---
+layout: post
+title: angular知识点（2）
+description: ngInject、ngSwitch、$timeout
+---
+<h2>1、为了代码规范，对于需要自动加载的依赖，需要在前面加上注释，注释为：//@ngInject 或者是/*@ngInject*/</h2>
+<h2>2、ngSwitch的应用</h2>
+<p>在需要用到选择出现功能的地方，可以用到这个。</p>
+<p>
+    在某个容器的元素上加上ng-switch就可以调用整个功能，添加on属性或直接使用ng-switch来选择匹配的内容，给元素的子元素添加ng-switch-when
+    属性，如果子元素的这个属性的值能匹配父元素的ng-switch属性的值，则可以展现，否则会如同ng-hide效果一样隐藏，具体使用如下：
+</p>
+<p>&lt;div &nbsp;ng-switch='a'&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='m'&gt;&lt;/div&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='n'&gt;&lt;/div&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='o'&gt;&lt;/div&gt;</p>
+<p>&lt;div&gt;</p>
+<p>或</p>
+<p>&lt;div &nbsp;ng-switch on='a'&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='m'&gt;&lt;/div&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='n'&gt;&lt;/div&gt;</p>
+<p>&nbsp; &nbsp; &nbsp;&lt;div ng-switch-when='o'&gt;&lt;/div&gt;</p>
+<p>&lt;div&gt;</p>
+<p>如果a的值为m，则会使第一个展现，其他隐藏。</p>
+<h2>3、$tiemout([fn],[delay],[invokeApply],[Pass])</h2>
+<p>
+    对原生js的函数setTimeout(function(),time)的封装，第一个是执行函数，第二个是延时，第三个参数是否调用$apply来包装function，默认是
+    true，$apply大家都知道，就是为了能响应数据的变化并绑定到相应的数据域中去，false就不会触发模板上的数据变化了，第四个参数是给与前面的执
+    行函数额外的参数，具体用法还不是很清楚。不过和原生函数返回值不同，这个函数返回promise对象，而且是通过使用这个promise对象来取消定时器
+    ——$timeout().cancle(promise)。
+</p>
+       
