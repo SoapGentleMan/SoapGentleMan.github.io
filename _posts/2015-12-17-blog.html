@@ -64,7 +64,7 @@ description: angualrjs整体学习
     <br/>
     对于$watch()，它的参数一个模块名，一个是回调函数，即$watch(string||function()，function(newVal，oldVal，scope))，newVal是
     当前值，oldVal是前一次的值，scope是引用的当前作用域的参数，一般可不写。关于$watch的一点心得：
-    <a href="/pages/viewpage.action?pageId=25294555">$watch详解</a>。
+    <a href="/2016/01/12/blog.html">$watch详解</a>。
 </p>
 
 <h3><span style="color: rgb(255,0,0);">4、$parse、$eval、$watch、$observe</span></h3>
@@ -86,32 +86,30 @@ description: angualrjs整体学习
 
 
 <h2><strong style="line-height: 1.25;">二、Dependency Injection</strong></h2>
-<p>先说说angular各个组件的定义方法吧。</p>
-<p>首先是定义模块 angular.module（“module name”，["dependency components name"]）</p>
 <p>
+    先说说angular各个组件的定义方法吧。
+    <br/>
+    首先是定义模块 angular.module（“module name”，["dependency components name"]）
+    <br/>
     接着是定义模块的服务、指令和控制器（"module name"）.(service || directive || controller) ( "service || directive ||
     controller name"， ["dependency components name"，function（dependency components params）])
-</p>
-<p>
+    <br/>
     再就是类似 config和run的定义，（"module name"）.（config || run） (["dependency components name"，function（dependency components params）])
-</p>
-<p>
+    <br/>
     还有一些其他组件，定义的方法与上面类似，就不一一说明了，大家遇到的时候自己注意就好。需要说明的是，dependency components name与
     dependency components params要是同步的，例如你引入了 “$scope” 和“$rootscope”，那function的参数就是$scope和$rootscope，
     顺序也要是一致的。当然，dependency components name是可以省略的，前提是可以通过你的dependency components params推断出你要注
     入的组件，从而找到相应的组件来使用。
-</p>
-<p>再来说说依赖注入的定义把。</p>
-<p>
+    <br/>
+    再来说说依赖注入的定义把。
+    <br/>
     所谓依赖注入，就是一个组件或一个函数在定义的时候，需要使用到其他组件或函数，这时候就要将依赖的组件或函数注入进去，这也就导致定义的
     组件或函数在没有依赖的组件或函数存在时是没法正常运行的。依赖注入几乎贯穿angular的全过程。
-</p>
-<p>
+    <br/>
     然而，并不是每一个组件或函数都是可以随便依赖注入的，正如我上面提到的几个组件，服务、指令、控制器一般没什么要求，但是对于config和run，
     就有要求了，config只能注入用.provider()定义的服务和一些常量，因为它是对模块进行配置，要确保配置完成之前没有实例对象的进行，而run
     则刚好和config相反，它不能有.provider()定义的服务的注入，这是为了确保实例对象运行的时候不会有系统配置。
-</p>
-<p>
+    <br/>
     从上面也很容易看出一件事，run运行块是在config配置块之后运行的，说的这我就要说一下angular启动过程都干了说明，首先它会创建注入器和
     加载相应的模块，然后会进行配置文件的配置（用config），接着运行angular应用（用run），最后就是按照设定的程序最终运行了。
 </p>
@@ -126,15 +124,17 @@ description: angualrjs整体学习
 <h2><strong style="line-height: 1.25;">三、Service</strong></h2>
 <p>
     对于Service，有五种定义方式：.constant() .value() .factory() .service() .provider()。
+    <br/>
+    大家要记住，Service使用的实例对象永远是同一个，所以当你改变了实例对象，所有的该Service的实例对象都会改变。
 </p>
-<p>大家要记住，Service使用的实例对象永远是同一个，所以当你改变了实例对象，所有的该Service的实例对象都会改变。</p>
 
 <h3>.constant()</h3>
 <p>
     constant创建服务返回一个json对象，这个对象里可以有参数，可以有方法，并且属性和方法都可以在控制器中修改、新增。但是按照它的设计本
     意，一般constant创建的服务不会去修改它的内容，需要修改内容，最好用value来创建服务。
+    <br/>
+    定义方式如下：
 </p>
-<p>定义方式如下</p>
 <pre>
 module.constant('name', {
     data1: data,
@@ -151,8 +151,9 @@ module.constant('name', {
     制器中修改、新增。但是按照它的设计本意，如果属性和方法需要被修改内容，就用value来创建服务。
     <br/>
     constant和value主要就是用于存放一些数据或方法以供使用，区别是constant一般是存放固定内容，value存放可能会被修改的内容。
+    <br/>
+    定义方式如下：
 </p>
-<p>定义方式如下：</p>
 <pre>
 module.value('name', {
     data1: data,
@@ -168,8 +169,9 @@ module.value('name', {
 <h3>.factory()</h3>
 <p>
     factory创建服务，第二个参数传入一个函数，函数返回一个json对象，这个对象里可以有参数，可以有方法，最终被注入的就是这个json对象。
+    <br/>
+    定义方式如下：
 </p>
-<p>定义方式如下：</p>
 <pre>
 module.factory('name', function() {
     return {
@@ -209,8 +211,11 @@ function data() {
 <p>这也是可以的。</p>
 
 <h3>.service()</h3>
-<p>service创建服务，第二个参数传入一个构造函数，在es6语法下，还可以是一个类，最终注入的也是这个构造函数或类实例化的结果。</p>
-<p>定义方式如下：</p>
+<p>
+    service创建服务，第二个参数传入一个构造函数，在es6语法下，还可以是一个类，最终注入的也是这个构造函数或类实例化的结果。
+    <br/>
+    定义方式如下：
+</p>
 <pre>
 module.service('name', function() {
          this.date1 = date;
@@ -236,8 +241,9 @@ module.service('name', class {
 <p>
     provider创建服务，第二个参数传入一个函数，函数返回一个对象，对象里要有$get方法，这个方法返回一个json对象，这个对象里可以有参数，
     可以有方法，最终被注入的就是这个json对象。
+    <br/>
+    定义方式如下：
 </p>
-<p>定义方式如下：</p>
 <pre>
 module.provider('name', function() {
     this.date1 = date;
@@ -279,9 +285,13 @@ module.provider('name', function() {
     }
 })
 </pre>
-<p>说到底，就是在.service()或.factory()的基础上加上$get方法就好，这个方法返回一个对象。</p>
-<p>值得注意的是，与上面的几个service定义方法不同的是，provider的依赖注入是在$get上进行，而不像其他的是在定义头上进行。</p>
-<p>而且provider定义的服务是唯一的能通过config进行配置的服务，而且只有在配置之后才能和其他服务一些样这也是它的与众不同之处。</p>
+<p>
+    说到底，就是在.service()或.factory()的基础上加上$get方法就好，这个方法返回一个对象。
+    <br/>
+    值得注意的是，与上面的几个service定义方法不同的是，provider的依赖注入是在$get上进行，而不像其他的是在定义头上进行。
+    <br/>
+    而且provider定义的服务是唯一的能通过config进行配置的服务，而且只有在配置之后才能和其他服务一些样这也是它的与众不同之处。
+</p>
 
 
 
@@ -293,8 +303,11 @@ module.provider('name', function() {
 
 
 <h2><strong style="line-height: 1.25;">四、Directive</strong></h2>
-<p>以前我看指令的时候，感觉比较头疼，因为引入了很多参数，对这些参数都不太了解。这次学习directive 的时候，随着对各个参数的了解，发现指令也没那么难，还是比较简单的。</p>
-<p>首先，要弄清指令是怎么创建的。指令的创建和服务的factory方法几乎一样，都是返回一个对象。例如：</p>
+<p>
+    以前我看指令的时候，感觉比较头疼，因为引入了很多参数，对这些参数都不太了解。这次学习directive 的时候，随着对各个参数的了解，发现指令也没那么难，还是比较简单的。
+    <br/>
+    首先，要弄清指令是怎么创建的。指令的创建和服务的factory方法几乎一样，都是返回一个对象。例如：
+</p>
 <pre>
 module.directive('name', function() {
     return {
@@ -302,8 +315,13 @@ module.directive('name', function() {
     }
 })
 </pre>
-<p><span style="color: rgb(255,0,0);">在指令中注入服务的方法是在创建时的函数那里注入即可，当然，你也可以只在controller中注入，那样就只供controller使用。</span></p>
-<p>找到了创建的方法，最重要的是知晓创建时各个参数的意义了。我现在列出所有的参数：</p>
+<p>
+    <span style="color: rgb(255,0,0);">
+        在指令中注入服务的方法是在创建时的函数那里注入即可，当然，你也可以只在controller中注入，那样就只供controller使用。
+    </span>
+    <br/>
+    找到了创建的方法，最重要的是知晓创建时各个参数的意义了。我现在列出所有的参数：
+</p>
 <pre>
 module.directive('name', function() {
     return {
@@ -324,27 +342,46 @@ module.directive('name', function() {
 <p>现在我来一个个说明各个参数的意义：</p>
 
 <h3>restrict</h3>
-<p>用来设定指令作为说明使用，具体的参数有E、A、C、M</p>
-<p>E：表示作为元素使用，即：&lt;directive title="xxx"&gt;&lt;/directive&gt;</p>
-<p>A：表示作为属性使用，即：&lt;div &nbsp;directive="xxx"&gt;&lt;/div&gt;</p>
-<p>C：表示作为类使用，即：&lt;div class="directive:xxx"&gt;&lt;/div&gt;</p>
-<p>M：表示作为注释使用，即：&lt;!–Directive:directive&nbsp;xxx–&gt;</p>
-<p>这个四种格式可以自由搭配的，搭配之后是并集关系，代表这些类型都可以使用。一般使用E、A的比较多，C和M的比较少。</p>
+<p>
+    用来设定指令作为说明使用，具体的参数有E、A、C、M
+    <br/>
+    E：表示作为元素使用，即：&lt;directive title="xxx"&gt;&lt;/directive&gt;
+    <br/>
+    A：表示作为属性使用，即：&lt;div &nbsp;directive="xxx"&gt;&lt;/div&gt;
+    <br/>
+    C：表示作为类使用，即：&lt;div class="directive:xxx"&gt;&lt;/div&gt;
+    <br/>
+    M：表示作为注释使用，即：&lt;!–Directive:directive&nbsp;xxx–&gt;
+    <br/>
+    这个四种格式可以自由搭配的，搭配之后是并集关系，代表这些类型都可以使用。一般使用E、A的比较多，C和M的比较少。
+</p>
 
 <h3>priority</h3>
-<p>很少使用的参数，用来设定指令的优先级，可以在指令和其他指令并存时想要优先实现的情况下使用。例如ng-init和ng-repeat就有优先级关系。</p>
-<p>参数的值为数字。</p>
+<p>
+    很少使用的参数，用来设定指令的优先级，可以在指令和其他指令并存时想要优先实现的情况下使用。例如ng-init和ng-repeat就有优先级关系。
+    <br/>
+    参数的值为数字。
+</p>
 
 <h3>teminal</h3>
-<p>很少使用的参数，参数值为布尔型。</p>
-<p>true：表示优先级低于此指令的指令都不执行，高于或相同优先级可以执行。</p>
-<p>false：表示上述限制不存在。</p>
-<p>默认是false。</p>
+<p>
+    很少使用的参数，参数值为布尔型。
+    <br/>
+    true：表示优先级低于此指令的指令都不执行，高于或相同优先级可以执行。
+    <br/>
+    false：表示上述限制不存在。
+    <br/>
+    默认是false。
+</p>
 
 <h3>template</h3>
-<p>模板参数，参数值为字符串或函数。</p>
-<p>不管是字符串还是函数，里面的内容都表示一段html代码，用来覆盖指令所在的html元素的内容。</p>
-<p>举个例子：</p>
+<p>
+    模板参数，参数值为字符串或函数。
+    <br/>
+    不管是字符串还是函数，里面的内容都表示一段html代码，用来覆盖指令所在的html元素的内容。
+    <br/>
+    举个例子：
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -353,9 +390,13 @@ module.directive('directive', function() {
     }
 })
 </pre>
-<p>&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
-<p>如果是使用的函数，会有一定的差别，这个函数里只有两个参数element 和attrs，前一个参数代表指令所在的元素，后一个是这个元素的所有属性的集合。</p>
-<p>举个例子：</p>
+<p>
+    &lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    如果是使用的函数，会有一定的差别，这个函数里只有两个参数element 和attrs，前一个参数代表指令所在的元素，后一个是这个元素的所有属性的集合。
+    <br/>
+    举个例子：
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -370,20 +411,24 @@ module.directive('directive', function() {
 </pre>
 <p>
     <s>&lt;directive &nbsp;title=“xx”&gt;&lt;/directive&gt;会被渲染成：&lt;div&gt;xx&lt;/div&gt;</s>
-</p>
-<p>
+    <br/>
     &lt;directive &nbsp;title=“xx”&gt;&lt;/directive&gt;会被渲染成：
-    <span style="color: rgb(255,0,0);">&lt;directive &nbsp;title=“xx”&gt;<span style="color: rgb(255,0,0);">&lt;div&gt;xx&lt;/div&gt;</span>&lt;/directive&gt;</span>
-</p>
-<p>
+    <span style="color: rgb(255,0,0);">
+        &lt;directive &nbsp;title=“xx”&gt;<span style="color: rgb(255,0,0);">&lt;div&gt;xx&lt;/div&gt;</span>&lt;/directive&gt;
+    </span>
+    <br/>
     看，差别出来了，如果是字符串，模板内容是覆盖到元素的内容而不包括元素本身，如果是函数<s>，则会覆盖整个元素。</s>
     <span style="color: rgb(255,0,0);">，仍然是覆盖元素内容</span>
 </p>
 
 <h3>templateUrl</h3>
-<p>也是模板参数，与上面不同的是它的参数是html文件的路径字符串或者函数。</p>
-<p>函数的内容与上面的一致的，而所谓的html文件的路径，其实和上面的字符串也是大同小异，不过是把上面的字符串内容放到一个html文件里面，然后引入进来。</p>
-<p>举个例子：</p>
+<p>
+    也是模板参数，与上面不同的是它的参数是html文件的路径字符串或者函数。
+    <br/>
+    函数的内容与上面的一致的，而所谓的html文件的路径，其实和上面的字符串也是大同小异，不过是把上面的字符串内容放到一个html文件里面，然后引入进来。
+    <br/>
+    举个例子：
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -393,22 +438,31 @@ module.directive('directive', function() {
 
 })
 </pre>
-<p>a.html的内容：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;</p>
-<p>&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
-<p>函数的例子就不补充了，和上面一样。</p>
 <p>
-        <span style="color: rgb(255,0,0);">
-            需要说明的事，现在的web应用在上线时都会进行优化，这样就导致所需的模板的路径并不是你所写的那样，除非你能保证上线时你的模板路径
-            能够匹配你书写的路径，否则，请不要使用这个参数，改用template。
-        </span>
+    a.html的内容：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;
+    <br/>
+    &lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    函数的例子就不补充了，和上面一样。
+    <br/>
+    <span style="color: rgb(255,0,0);">
+        需要说明的事，现在的web应用在上线时都会进行优化，这样就导致所需的模板的路径并不是你所写的那样，除非你能保证上线时你的模板路径
+        能够匹配你书写的路径，否则，请不要使用这个参数，改用template。
+    </span>
 </p>
 
 <h3>replace&nbsp;</h3>
-<p>覆盖参数，参数值为布尔型。</p>
-<p>true：覆盖指令所在的整个元素。</p>
-<p>false：只 覆盖指令所在的元素的内容。</p>
-<p>默认是false。</p>
-<p>举个例子：</p>
+<p>
+    覆盖参数，参数值为布尔型。
+    <br/>
+    true：覆盖指令所在的整个元素。
+    <br/>
+    false：只 覆盖指令所在的元素的内容。
+    <br/>
+    默认是false。
+    <br/>
+    举个例子：
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -418,27 +472,36 @@ module.directive('directive', function() {
     }
 })
 </pre>
-<p>如果参数是true，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;</p>
-<p>如果参数是false，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
 <p>
-        <span style="color: rgb(255,0,0);">
-            这个参数在以后的版本中将要被废除了，而现在使用的时候需要注意，当replace为true时，你的模板中一定要有个根节点，理由也很简单，没
-            有根节点，你用说明去取代所在的元素呢？
-        </span>
+    如果参数是true，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;
+    <br/>
+    如果参数是false，&lt;directive&gt;&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3&gt;hello world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    <span style="color: rgb(255,0,0);">
+        这个参数在以后的版本中将要被废除了，而现在使用的时候需要注意，当replace为true时，你的模板中一定要有个根节点，理由也很简单，没
+        有根节点，你用说明去取代所在的元素呢？
+    </span>
 </p>
 
 <h3>transclude</h3>
-<p>提取参数，参数值为布尔型或“element”。</p>
-<p>true：提取指令所在元素的内容放到指令的模板的的特定位置（覆盖掉标记ng-transclude所在元素的内容）。</p>
-<p>false：不提取。</p>
-<p>element：提取指令所在元素的整个元素放到指令的模板的特定位置（覆盖掉标记ng-transclude所在元素的内容）。</p>
-<p>默认是false。</p>
 <p>
+    提取参数，参数值为布尔型或“element”。
+    <br/>
+    true：提取指令所在元素的内容放到指令的模板的的特定位置（覆盖掉标记ng-transclude所在元素的内容）。
+    <br/>
+    false：不提取。
+    <br/>
+    element：提取指令所在元素的整个元素放到指令的模板的特定位置（覆盖掉标记ng-transclude所在元素的内容）。
+    <br/>
+    默认是false。
+    <br/>
     需要注意的是，如果参数为element，提取整个元素，放在指令的模板上，就会出现指令里有着同样的指令，而且这是个无限循环。本来，这是应该
     报错的，但是由于语言设定的问题，这里不会报错，而是将指令所在的元素转换为注释。
+    <br/>
+    这里的解决方法是加上replace：true，我没有弄清楚为什么要这么做，可能跟底层的一些DOM操作有关吧。
+    <br/>
+    举个例子：
 </p>
-<p>这里的解决方法是加上replace：true，我没有弄清楚为什么要这么做，可能跟底层的一些DOM操作有关吧。</p>
-<p>举个例子：</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -451,23 +514,28 @@ module.directive('directive', function() {
 <p>
     如果参数是true，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3 &nbsp;ng-transclude&gt;what
     fuck&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
-</p>
-<p>
+    <br/>
     如果参数是false，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;directvie&gt;&lt;div&gt;&lt;h3 ng-transclude&gt;hello
     world&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
-</p>
-<p>如果参数是“element”，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;!--directive:undefined–&gt;</p>
-<p>
+    <br/>
+    如果参数是“element”，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;!--directive:undefined–&gt;
+    <br/>
     如果参数是“element”，同时加上replace：true，&lt;directive&gt;what fuck&lt;/directive&gt;会被渲染成：&lt;div&gt;&lt;h3 ng-transclude&gt;&lt;directive&gt;what
     fuck&lt;/directive&gt;&lt;/h3&gt;&lt;/div&gt;
 </p>
 
 <h3>scope</h3>
-<p>作用域参数，参数值为布尔值或{}。</p>
-<p>true：继承父作用域，并创建一个新的子作用域，这个子作用域只能指令模板中的$scope元素使用。</p>
-<p>false：只继承父作用域。</p>
-<p>{}：创建一个全新的隔离作用域。</p>
-<p>举个例子：</p>
+<p>
+    作用域参数，参数值为布尔值或{}。
+    <br/>
+    true：继承父作用域，并创建一个新的子作用域，这个子作用域只能指令模板中的$scope元素使用。
+    <br/>
+    false：只继承父作用域。
+    <br/>
+    {}：创建一个全新的隔离作用域。
+    <br/>
+    举个例子：
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -482,18 +550,24 @@ module.directive('directive', function() {
     如果参数是true，&lt;directive &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie &nbsp;
     ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;，这里要说明的是，如果指令本
     身有子作用域且子作用域中对xxx赋值为bbb，那会渲染成：&lt;directvie&nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;bbb&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
-</p>
-<p>
+    <br/>
     如果参数是false，&lt;directive &nbsp;ng-init=“xxx=‘aaa’”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie &nbsp;
     ng-init=“xxx=‘aaa’”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    这里单独说明值为{}的情况。
+    <br/>
+    {}怎么用呢，是这样的，{}可以将这个隔离作用域之外的属性绑定到作用域之内的属性上，从而实现隔离作用域内对隔离作用域外的属性的调用，当然，这种绑定只能绑定指令所在元素的属性。
+    <br/>
+    既然知道能够绑定了，接下来要介绍的就是三种绑定策略：@，=，&：
+    <br/>
+    @用来进行单向文本绑定，只能针对字符串，不能针对对象。
+    <br/>
+    =用来进行双向绑定，字符串和对象都能针对。
+    <br/>
+    &用来进行函数的绑定。
+    <br/>
+    举个例子：
 </p>
-<p>这里单独说明值为{}的情况</p>
-<p>{}怎么用呢，是这样的，{}可以将这个隔离作用域之外的属性绑定到作用域之内的属性上，从而实现隔离作用域内对隔离作用域外的属性的调用，当然，这种绑定只能绑定指令所在元素的属性。</p>
-<p>既然知道能够绑定了，接下来要介绍的就是三种绑定策略：@，=，&amp;</p>
-<p>@用来进行单向文本绑定，只能针对字符串，不能针对对象。</p>
-<p>=用来进行双向绑定，字符串和对象都能针对</p>
-<p>&用来进行函数的绑定</p>
-<p>举个例子：</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -505,8 +579,11 @@ module.directive('directive', function() {
     }
 })
 </pre>
-<p>&lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
-<p>这就是@的功能体现，请牢记：<span style="color: rgb(255,0,0);">单向的，针对字符串的</span></p>
+<p>
+    &lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;aaa&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    这就是@的功能体现，请牢记：<span style="color: rgb(255,0,0);">单向的，针对字符串的</span>
+</p>
 <pre>
 module.directive('directive', function() {
     return {
@@ -518,26 +595,36 @@ module.directive('directive', function() {
     }
 })
 </pre>
-<p>&lt;div&gt;</p>
-<p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;</p>
-<p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;</p>
-<p>&lt;/div&gt;</p>
-<p>会被渲染成：</p>
-<p>&lt;div&gt;</p>
-<p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;</p>
-<p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;</p>
 <p>
+    &lt;div&gt;
+    <br/>
+    &nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;
+    <br/>
+    &nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;&lt;/directive&gt;
+    <br/>
+    &lt;/div&gt;
+    <br/>
+    会被渲染成：
+    <br/>
+    &lt;div&gt;
+    <br/>
+    &nbsp; &nbsp; &nbsp; &nbsp;&lt;input &nbsp;ng-model="aaa" &nbsp;/&gt;
+    <br/>
+    &nbsp; &nbsp; &nbsp; &nbsp;&lt;directive &nbsp;xxx=“aaa”&gt;
+    <br/>
     &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&lt;div&gt;&lt;input &nbsp;ng-model="
     <span style="color: rgb(255,0,0);">xxx</span>" &nbsp;/&gt;&lt;/div&gt;
-</p>
-<p>&nbsp; &nbsp; &nbsp; &nbsp;&lt;/directive&gt;</p>
-<p>&lt;/div&gt;</p>
-<p>
+    <br/>
+    &nbsp; &nbsp; &nbsp; &nbsp;&lt;/directive&gt;
+    <br/>
+    &lt;/div&gt;
+    <br/>
     这里能够体现的就是双向绑定的功能，渲染的两个xxx，我设置成两个不同的颜色就是为了说明这不是一个作用域的xxx，黑色的是指令外的作用域，
     红色的是指令内的作用域，这两个值是不对等的，但是有指令里=，这两个值双向绑定了，这就使得在第一个input里填写的内容，会在第二个input
     里出现，而在第二个input里填写的内容，会在第一个input里出现。
+    <br/>
+    这就是=的功能体现，请牢记：<span style="color: rgb(255,0,0);">双向的，针对字符串和对象的。</span>
 </p>
-<p>这就是=的功能体现，请牢记：<span style="color: rgb(255,0,0);">双向的，针对字符串和对象的。</span></p>
 <pre>
 module.directive('directive', function(){
     return {
@@ -549,23 +636,34 @@ module.directive('directive', function(){
     }
 })
 </pre>
-<p>&lt;directive &nbsp;xxx=“aaa()”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;&lt;button
-    &nbsp;ng-click="aaa()"&gt;&lt;/button&gt;&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;</p>
-<p>这里体现的就是绑定函数使用的功能了，其实和上面相比差别就在于使用的符号不同，绑定之后使用的方法还是照常的。</p>
-<p><span style="color: rgb(255,0,0);">如果想给函数传递参数，就在函数中添加要加入的参数名称，而指令在使用时，就要以对象的形式给参数赋值。例如：</span></p>
-<p><span style="color: rgb(255,0,0);">xxx=“aaa(m,n)”，那么指令在使用时，需要xxx({m:m,n:n})这样使用</span></p>
-<p>这就是&的功能，请牢记：<span style="color: rgb(255,0,0);">绑定函数。</span></p>
+<p>
+    &lt;directive &nbsp;xxx=“aaa()”&gt;&lt;/directive&gt;会被渲染成：&lt;directvie xxx=“aaa”&gt;&lt;div&gt;&lt;h3&gt;&lt;button
+    &nbsp;ng-click="aaa()"&gt;&lt;/button&gt;&lt;/h3&gt;&lt;/div&gt;&lt;/directive&gt;
+    <br/>
+    这里体现的就是绑定函数使用的功能了，其实和上面相比差别就在于使用的符号不同，绑定之后使用的方法还是照常的。
+    <br/>
+    <span style="color: rgb(255,0,0);">如果想给函数传递参数，就在函数中添加要加入的参数名称，而指令在使用时，就要以对象的形式给参数赋值。例如：</span>
+    <br/>
+    <span style="color: rgb(255,0,0);">xxx=“aaa(m,n)”，那么指令在使用时，需要xxx({m:m,n:n})这样使用</span>
+    <br/>
+    这就是&的功能，请牢记：<span style="color: rgb(255,0,0);">绑定函数。</span>
+</p>
 
 <h3>controller 、link 、require&nbsp;、compile</h3>
-<p>这四个参数我放到一起，因为彼此间有联系。</p>
-<p>首先，对于controller、link、compile这三个函数的运行关系，运行顺序是controller先运行、compile或link后运行，link与compile不兼容。</p>
 <p>
+    这四个参数我放到一起，因为彼此间有联系。
+    <br/>
+    首先，对于controller、link、compile这三个函数的运行关系，运行顺序是controller先运行、compile或link后运行，link与compile不兼容。
+    <br/>
     为啥不兼容呢，这是因为说到compile里有link的回调的缘故了，compile属于编译函数，它会编译代码然后用link去绑定内容到相应的scope，准
     确的来说compile通过编译生成了dom对象，这就是为什么compile和link不兼容的原因了。
+    <br/>
+    require这个函数是用来进行指令间的通信的。它可以将一个指令的里的controller调用到另一个指令中，然后通过compile或link函数去使用。
+    <br/>
+    具体的使用方法如下：
+    <br/>
+    这里我直接使用别人举得例子
 </p>
-<p>require这个函数是用来进行指令间的通信的。它可以将一个指令的里的controller调用到另一个指令中，然后通过compile或link函数去使用。</p>
-<p>具体的使用方法如下：</p>
-<p>这里我直接使用别人举得例子</p>
 <pre class="php">
 phonecatDirectives.directive('exampleDirective', function() {
     return {
@@ -604,14 +702,23 @@ dtControllers.controller('directive2', ['$scope',
     &lt;/div&gt;
 &lt;/body&gt;
     </pre>
-<p>这个代码运行的结果，就是hello 1111 2222 4444 5555，如果去掉compile，运行结果就是hello 1111 2222 3333。</p>
-<p>现在来说一下参数吧，controller、compile和link里一般有三个参数：（controller里加入美元符号以与其他两个做区分）</p>
-<p>scope：若指令中没有scope参数，指指令所在元素的scope对象；若有，指指令中scope的对象</p>
-<p>element：指令所在元素的内容集合</p>
-<p>attributes：指令所在元素的属性集合</p>
-<p>现在来说一下require</p>
-<p>前面也说了，是调用某个指令中的controller实现的。举个例子：</p>
-<p>假设上面的内容存在</p>
+<p>
+    这个代码运行的结果，就是hello 1111 2222 4444 5555，如果去掉compile，运行结果就是hello 1111 2222 3333。
+    <br/>
+    现在来说一下参数吧，controller、compile和link里一般有三个参数：（controller里加入美元符号以与其他两个做区分）
+    <br/>
+    scope：若指令中没有scope参数，指指令所在元素的scope对象；若有，指指令中scope的对象
+    <br/>
+    element：指令所在元素的内容集合
+    <br/>
+    attributes：指令所在元素的属性集合
+    <br/>
+    现在来说一下require
+    <br/>
+    前面也说了，是调用某个指令中的controller实现的。举个例子：
+    <br/>
+    假设上面的内容存在
+</p>
 <pre>
 module.directive('directive', function(){
     return {
@@ -629,15 +736,19 @@ module.directive('directive', function(){
 </pre>
 <p>
     这里的controller指代就是require里的指令，如果上述的require是个数组，这里的controller也就是个数组，两者的数据是对应的，调用时也需要通过数组的方式调用。
-</p>
-<p>
+    <br/>
     <span style="color: rgb(255,0,0);">要注意的是，require里的指令名字前是可以有符号的，比如上面的^符号。对应的符号及其意义如下：</span>
+    <br/>
+    无符号：在require所在的指令中查找控制器，没有会抛出错误
+    <br/>
+    ^符号：在require所在的指令和指令的父指令中查找控制器，没有会抛出错误
+    <br/>
+    ^^符号：在require所在的指令的父指令中查找控制器，没有会抛出错误
+    <br/>
+    ?符号：在require所在的指令中查找控制器，没有会把controller参数置空
+    <br/>
+    以上的符号可以将?和^或^^组合
 </p>
-<p>无符号：在require所在的指令中查找控制器，没有会抛出错误</p>
-<p>^符号：在require所在的指令和指令的父指令中查找控制器，没有会抛出错误</p>
-<p>^^符号：在require所在的指令的父指令中查找控制器，没有会抛出错误</p>
-<p>?符号：在require所在的指令中查找控制器，没有会把controller参数置空</p>
-<p>以上的符号可以将?和^或^^组合</p>
 
 
 
