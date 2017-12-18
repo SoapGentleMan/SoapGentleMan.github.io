@@ -1,0 +1,138 @@
+---
+layout: post
+title: react初探
+description: react 相关学习.
+---
+<p>
+    react是facebook的一个开源js框架，专注的层面在view层(即视图层)，专注的中心在于组件化，它认为页面上的一切元素都可以组件化，甚至于小到一个span标签。
+</p>
+<p>
+    由于它的这种思想的存在，注定它会生成属于它自身独有的页面标签，这种页面标签并不存在于真实DOM中，而是存在于react生成的虚拟DOM中，之后所
+    有的ui改动会先在虚拟DOM中进行，然后根据一种特殊的算法判断改动的地方，最后去真实DOM中改动，根据开发团队的说法，这种方式比其他框架对DOM的改动更快。
+</p>
+<p>
+    下面先初步了解一下react的写法，看这个例子：
+</p>
+<pre>
+class LikeButton extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      liked: false
+    };
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick() {
+    this.setState({liked: !this.state.liked});
+  }
+  render() {
+    const text = this.state.liked ? 'liked' : 'haven\'t liked';
+    return (
+      &lt;div onClick={this.handleClick}&gt;
+        You {text} this. Click to toggle.
+      &lt;/div&gt;
+    );
+  }
+}
+ReactDOM.render(
+  &lt;LikeButton /&gt;,
+  document.getElementById('example')
+);
+</pre>
+<p>
+  这是最简单的书写react组件的方法，也是几乎最核心的东西。可能已经注意到了，我们在js中书写了html，这种语法就是jsx的语法，其解析方式就在于
+  遇到“<”开头的就以html的方式解析，遇到"{"开头的就是以js的方式解析，如果你用的ts，对应的有tsx。
+</p>
+
+<h3>状态机</h3>
+<p>
+    要明白一个观念，react的每个组件都是一个状态机，组件自身都携带着与自身有关的所有状态，通过对状态的更改，会触发组件的某些函数的自发运作。
+</p>
+
+<h3>render函数</h3>
+<p>
+    每一个react组件都包含有一个render函数，这个函数是用来进行页面渲染的，每当组件中的状态有了变动，组件会自动调用它的render函数对数据以及
+    页面元素进行修改，然后修改的这个地方渲染到真实的DOM中去。这个函数最后会返回html代码，也是用来给组件渲染到真实的DOM中去的。
+</p>
+
+<h3>props属性</h3>
+<p>
+    每个组件都有props属性，是获取组件作为标签使用时标签上的属性的值。props属性在react中被定义为不可变的属性，不是说它的值不可变，而是
+    react设定这个值是不变的，所以在这个值初始化之后，我们不要再去更改这个属性(需要说明的是，这个值的改变会自动调用render)。
+</p>
+
+<h3>state属性</h3>
+<p>
+    每个组件都有state属性，是组件自定义的属性，属于可变属性。这个跟props属性刚好是相反的，它的值变化，会自动调用render函数去进行页面绘制
+    (这里需要注意，单纯的值的变化并不会调用render函数，需要使用setState()函数来改变states才会调用render函数)。
+</p>
+
+<h3>refs属性</h3>
+<p>
+    这个属性在组件中会经常被调用，用来获取组件里的子元素，并对其子元素进行相应操作，想要用这个属性，需要在子元素上添加相应的ref属性。
+</p>
+
+<p style="overflow: hidden"></p>
+
+<p>
+    以上的描述，只是描述了react最基础也最常用的几个属性以及函数，还有几个在整个react生存周期内常用的函数，说到这，可以先给出一张react的生命周期图：
+</p>
+<img src="/images/react.png" />
+<p>
+    说到底，生命周期里的函数都是自动会调用的，所以并不是只有render函数会自动调用。也就是说一个状态改变时，调用的函数并不只是render，而是可能在生命周期里的与之有关的其他函数。
+</p>
+
+<p style="overflow: hidden"></p>
+
+<div>
+    下面对这些函数进行一下说明：
+</div>
+<h3>1、getDefaultProps()</h3>
+<p>
+    设置默认的props，也可以用dufaultProps设置组件的默认属性。
+</p>
+<h3>2、getInitialState()</h3>
+<p>
+    在使用es6的class语法时是没有这个前置函数的，可以直接在constructor中定义this.state。此时可以访问this.props。
+</p>
+<h3>3、componentWillMount()</h3>
+<p>
+    组件初始化时只调用，以后组件更新不调用，整个生命周期只调用一次，此时可以修改state。
+</p>
+<h3>4、render()</h3>
+<p>
+    react最重要的步骤，创建虚拟dom，进行diff算法，更新dom树都在此进行。此时就不能更改state了。
+</p>
+<h3>5、componentDidMount()</h3>
+<p>
+    组件渲染之后调用。
+</p>
+<h3>6、componentWillReceivePorps(nextProps)</h3>
+<p>
+    组件初始化时不调用，组件接受新的props时调用。
+</p>
+<h3>7、shouldComponentUpdate(nextProps, nextState)</h3>
+<p>
+    react性能优化非常重要的一环。组件接受新的state或者props时调用，我们可以设置在此对比前后两个props和state是否相同，如果相同则返回
+    false阻止更新，因为相同的属性状态一定会生成相同的dom树，这样就不需要创造新的dom树和旧的dom树进行diff算法对比，节省大量性能，尤其是在
+    dom结构复杂的时候。不过调用this.forceUpdate会跳过此步骤。
+</p>
+<h3>8、componentWillUpdate()</h3>
+<p>
+    组件初始化时不调用，只有在组件将要更新时才调用，此时可以修改state。
+</p>
+<h3>9、componentDidUpdate()</h3>
+<p>
+    组件初始化时不调用，组件更新完成后调用。
+</p>
+<h3>10、componentWillUnmount()</h3>
+<p>
+    组件将要卸载时调用，一些事件监听和定时器需要在此时清除。
+</p>
+
+<p style="overflow: hidden"></p>
+
+<p>
+    整个组件的生命周期其实还是很好理解的，以上说的东西已经是react里的核心内容了，其他的一些额外的api，需要大家自己去探索。react本身作为一
+    个状态机，但是却并没有对状态的管理，所以一般它会配合一些状态管理的库，如redux或mobx等，去进行配合使用。
+</p>

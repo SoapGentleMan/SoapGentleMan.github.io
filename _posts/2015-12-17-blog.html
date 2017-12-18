@@ -72,7 +72,7 @@ description: angualrjs整体学习
     $parse、$eval都是用来解析表达式的，而$eval的基础是$parse，它实质还是通过$parse实现的，只是$parse的一种封装。
     <br/>
     $watch、$observe都可以用来监视属性，同时$watch也能够用来监视表达式。但是，$observe只用在指令内部，监控带有插值表达式
-    （即类似{{}}这种的插值字符串）的属性。其他情况的属性监控，都用$watch。
+    （即类似&#123;&#123;&#125;&#125;这种的插值字符串）的属性。其他情况的属性监控，都用$watch。
     <br/>
     （具体的使用方法我还没有想明白，这里以后来补充）
 </p>
@@ -968,7 +968,7 @@ app.directive('aGreatEye', function () {
     return {
         restrict: 'E',
         replace: true,
-        template: '&lt;h1&gt;lidless, wreathed in flame, {{1 + 1}} times&lt;/h1&gt;'
+        template: '&lt;h1&gt;lidless, wreathed in flame, &#123;&#123;1 + 1&#125;&#125; times&lt;/h1&gt;'
     };
 });
 
@@ -991,7 +991,7 @@ describe('Unit testing great quotes', function() {
   it('Replaces the element with the appropriate content', function() {
     // Compile a piece of HTML containing the directive
     var element = $compile('&lt;a-great-eye&gt;&lt;/a-great-eye&gt;')($rootScope);
-    // fire all the watches, so the scope expression {{1 + 1}} will be evaluated
+    // fire all the watches, so the scope expression &#123;&#123;1 + 1&#125;&#125; will be evaluated
     $rootScope.$digest();
     // Check that the compiled element contains the templated content
     expect(element.html()).toContain('lidless, wreathed in flame, 2 times');
