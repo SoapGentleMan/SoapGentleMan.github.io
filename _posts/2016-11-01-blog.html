@@ -1,0 +1,45 @@
+---
+layout: post
+title: 鼠标事件
+description: 与鼠标点击相关的事件研究
+---
+<p>这里不讨论基础原理，想要查看DOM事件的一些基础知识请查看：<a href="/2016/01/04/blog.html">DOM事件模型</a></p>
+<p>首先，我们要知道一次页面上的点击可能会出发哪些事件，以下是会发生的事件：</p>
+<p>1、mousedown</p>
+<p>2、focus</p>
+<p>2、mouseup</p>
+<p>4、click</p>
+<p>5、contextmenu</p>
+<p>6、submit</p>
+<p>7、reset</p>
+<p>8、dblclick</p>
+<p>经过实验，上述事件相互之间的发生都有着关系：</p>
+<p>
+    1、mousedown事件不受其他影响，只需要鼠标进行按下动作，就可以触发这个事件
+</p>
+<p>
+    2、mousedown事件会触发将元素设置为焦点的动作，只要这个元素可以设为焦点，会触发这个元素的focus事件，如果阻止mousedown事件的默认动作，
+    则可以阻止该元素的focus事件发生，因而focus事件受mousedown事件的影响
+</p>
+<p>
+    3、mouseup事件不受其他影响，只需要鼠标进行放开动作，就可以触发这个事件
+</p>
+<p>
+    4、click事件不受其他影响，只需要鼠标（或键盘按键，由于只讨论鼠标的点击，这里不做说明）在同一个元素上先后触发了按下和放开有关的事件
+    （鼠标就是mousedown和mouseup），就可以在当前元素上触发，但是需要注意的是，鼠标右键进行这两个操作是不能触发click事件的，而鼠标左键和
+    中键可以触发，至于鼠标上可能的其他按键，由于设备缘故无法测试，推测是可以触发的
+</p>
+<p>
+    5、contextmenu事件不受其他影响，只需要鼠标右键在同一个元素上先后触发了mousedown和mouseup事件，就可以在当前元素上触发，由于这是右键的
+    点击事件，因此可以适当说明为什么右键的点击无法触发click事件，这应该是浏览器自主进行了区分
+</p>
+<p>
+    6、click事件会触发submit或reset动作，根据点击的元素是否是submit的button或者reset的button来决定，两个动作分别触发该元素所在表单元素
+    的submit事件或reset事件，如果阻止click事件的默认动作，则可以阻止该元素所在表单的submit事件或reset事件发生
+</p>
+<p>
+    7、dblclick事件会在click事件触法两次时触发，但是，这两次click事件需要在指定的时间范围内触发才有效，否则无效，这个时间范围浏览器会根据
+    你的系统设定里来指定，你可以通过查看注册表里的鼠标双击速度获得HKE HKEY_CURRENT_USER\Control Panel\Mouse Y_CURRENT_USER\Control Panel\Mouse
+</p>
+
+       
